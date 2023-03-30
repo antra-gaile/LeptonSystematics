@@ -8,7 +8,7 @@ gRandom.SetSeed(101)
 #year = "2017"
 year = "2018"
 
-if (year=="2016"):
+if (year=="2016"):# muSF files are no longer used
    lumi = 36.92
    #muSF=TFile.Open("/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIILegacy/200205_CutBased/MuonSF/final_HZZ_SF_2016_legacy_mupogsysts.root")
    muSF=TFile.Open("$CMSSW_BASE/src/ZZAnalysis/AnalysisStep/data/LeptonEffScaleFactors/ScaleFactors_mu_Moriond2017_v2.root")
@@ -31,9 +31,9 @@ corr_factor = 0
 
 # List of samples to run on
 List = [
-#'ggH125',
+'ggH125',
 #'ZZTo4l',
-'ggTo4l'
+#'ggTo4l'
 ]
 
 def sigma_event(rho, SF1, SF2, SF3, SF4, sigma1, sigma2, sigma3, sigma4):
@@ -43,6 +43,9 @@ def sigma_event(rho, SF1, SF2, SF3, SF4, sigma1, sigma2, sigma3, sigma4):
    else:
       return rez
 
+uncFromJpsi={10:{1:0.06249331,2.1:0.06249331,2.2:0.04002326,3.1:0.06263873,3.2:0.05901701},
+          15:{1:0.07791499,2.1:0.07791499,2.2:0.05649649,3.1:0.05474074,3.2:0.05055636}} #with sel+rec
+   
 for Type in List:
    # Open the root file and get tree
    mc=TFile.Open(folder+Type+file_name)
@@ -204,8 +207,51 @@ for Type in List:
          
          if (abs(tree.LepLepId[i]) == 11):
             SF_lep[i] = event.LepSF[i]
-            err_lep_up[i] = event.LepSF_Unc[i]
-            err_lep_dn[i] = event.LepSF_Unc[i]
+            if event.LepPt[i]<15:
+                #print("low!")
+                if event.LepPt[i]<10: #7-10 GeV bin
+                    if abs(event.LepEta[i])<0.8:
+                        err_lep_up[i] = uncFromJpsi[10][1]
+                        err_lep_dn[i] = uncFromJpsi[10][1]
+                    elif abs(event.LepEta[i])<1:
+                        err_lep_up[i] = uncFromJpsi[10][2.1]
+                        err_lep_dn[i] = uncFromJpsi[10][2.1]
+                    elif abs(event.LepEta[i])<1.44:
+                        err_lep_up[i] = uncFromJpsi[10][2.2]
+                        err_lep_dn[i] = uncFromJpsi[10][2.2]
+                    elif abs(event.LepEta[i])<1.57:
+                        err_lep_up[i] = event.LepSF_Unc[i]
+                        err_lep_dn[i] = event.LepSF_Unc[i]
+                    elif abs(event.LepEta[i])<2:
+                        err_lep_up[i] = uncFromJpsi[10][3.1]
+                        err_lep_dn[i] = uncFromJpsi[10][3.1]
+                    elif abs(event.LepEta[i])<2.5:
+                        err_lep_up[i] = uncFromJpsi[10][3.2]
+                        err_lep_dn[i] = uncFromJpsi[10][3.2]
+
+                else:
+                    if abs(event.LepEta[i])<0.8: #10-15 GeV bin
+                        err_lep_up[i] = uncFromJpsi[15][1]
+                        err_lep_dn[i] = uncFromJpsi[15][1]
+                    elif abs(event.LepEta[i])<1:
+                        err_lep_up[i] = uncFromJpsi[15][2.1]
+                        err_lep_dn[i] = uncFromJpsi[15][2.1]
+                    elif abs(event.LepEta[i])<1.44:
+                        err_lep_up[i] = uncFromJpsi[15][2.2]
+                        err_lep_dn[i] = uncFromJpsi[15][2.2]
+                    elif abs(event.LepEta[i])<1.57:
+                        err_lep_up[i] = event.LepSF_Unc[i]
+                        err_lep_dn[i] = event.LepSF_Unc[i]
+                    elif abs(event.LepEta[i])<2:
+                        err_lep_up[i] = uncFromJpsi[15][3.1]
+                        err_lep_dn[i] = uncFromJpsi[15][3.1]
+                    elif abs(event.LepEta[i])<2.5:
+                        err_lep_up[i] = uncFromJpsi[15][3.2]
+                        err_lep_dn[i] = uncFromJpsi[15][3.2]
+
+            else:
+                err_lep_up[i] = event.LepSF_Unc[i]
+                err_lep_dn[i] = event.LepSF_Unc[i]
             #print "ELE SF: ", SF_lep, " ########## event.LepPt[i]", event.LepPt[i], " ### event.LepEta[i]", event.LepEta[i]
             #print "   ELE: err_lep_up", err_lep_up
             #print "   ELE: err_lep_dn", err_lep_dn
@@ -382,7 +428,21 @@ for Type in List:
       print "4e = +{:.1f}% -{:.1f}%  4mu = +{:.1f}% -{:.1f}%".format(100*(comb_uncor_4e_up**0.5),100*(comb_uncor_4e_dn**0.5),100*(comb_uncor_4mu_up**0.5),100*(comb_uncor_4mu_dn**0.5))
       print "2e2mu/ele = +{:.1f}% -{:.1f}% 2e2mu/mu = +{:.1f}% -{:.1f}%".format(100*(comb_uncor_2e2mu_e_up**0.5),100*(comb_uncor_2e2mu_e_dn**0.5),100*(comb_uncor_2e2mu_mu_up**0.5),100*(comb_uncor_2e2mu_mu_dn**0.5))
       print "=============================================================================="
+      
+      e4dn=(comb_uncor_4e_dn**0.5)/0.125
+      e4up=(comb_uncor_4e_up**0.5)/0.11
+      e2up=(comb_uncor_2e2mu_e_up**0.5)/0.074
+      e2dn=(comb_uncor_2e2mu_e_dn**0.5)/0.077
 
+      print "4e -{0:.3f} +{1:.3f}".format(e4dn,e4up)
+      print "2e -{0:.3f} +{1:.3f}\n".format(e2dn,e2up)
+      print "e2016_2e2mu =  '{0:.3f}/{1:.3f}'".format(1-0.107*e2dn,1+0.105*e2up)
+      print "e2016_4e =  '{0:.3f}/{1:.3f}'".format(1-0.165*e4dn,1+0.155*e4up)
+      print "e2017_2e2mu =  '{0:.3f}/{1:.3f}'".format(1-0.085*e2dn,1+0.082*e2up)
+      print "e2017_4e =  '{0:.3f}/{1:.3f}'".format(1-0.133*e4dn,1+0.121*e4up)
+      print "e2018_2e2mu =  '{0:.3f}/{1:.3f}'".format(1-comb_uncor_2e2mu_e_dn**0.5,1+comb_uncor_2e2mu_e_up**0.5)
+      print "e2018_4e =  '{0:.3f}/{1:.3f}'".format(1-comb_uncor_4e_dn**0.5,1+comb_uncor_4e_up**0.5)
+      print "=============================================================================="
 
 
 
